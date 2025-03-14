@@ -1,12 +1,14 @@
-export type Id = string | number;
+export interface Task {
+  id: string
+  content: string
+  columnId: string
+  priority?: "low" | "medium" | "high"
+  createdAt: Date
+}
 
-export type Column = {
-  id: Id;
-  title: string;
-};
+export interface Column {
+  id: string
+  title: string
+  color?: string
+}
 
-export type Task = {
-  id: Id;
-  columnId: Id;
-  content: string;
-};
