@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  password      String
+  createdAt     DateTime @default(now())
+  boardsCreated Board[]  @relation("BoardCreator")
+  boards        Board[]  @relation("BoardMembers")
+  Task          Task[]
+}
+
+model Board {
+  id        String    @id @default(cuid())
+  content   String
+  createdAt DateTime  @default(now())
+  dueDate   DateTime?
+  columns   Column[]
+  creator   User      @relation("BoardCreator", fields: [creatorId], references: [id])
+  creatorId String
+  members   User[]    @relation("BoardMembers")
+}
+
+model Column {
+  id      String @id @default(cuid())
+  title   String
+  board   Board  @relation(fields: [boardId], references: [id])
+  boardId String
+  tasks   Task[]
+}
+
+model Task {
+  id         String   @id @default(cuid())
+  title      String
+  content    String?
+  createdAt  DateTime @default(now())
+  column     Column   @relation(fields: [columnId], references: [id])
+  columnId   String
+  assignedTo User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  priority   Priority
+}
