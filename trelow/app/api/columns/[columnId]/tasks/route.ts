@@ -2,8 +2,16 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/route";
+import * as webpush from "web-push";
 
 const prisma = new PrismaClient();
+
+// Configurer web-push
+webpush.setVapidDetails(
+  "mailto:contact@votresite.com",
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "",
+  process.env.VAPID_PRIVATE_KEY || ""
+);
 
 // POST /api/columns/[columnId]/tasks - Ajouter une tâche à une colonne
 export async function POST(
@@ -28,10 +36,17 @@ export async function POST(
       );
     }
 
-    // Vérifier que la colonne existe et que l'utilisateur a accès
+    // Vérifier que la colonne existe et récupérer les informations du tableau
     const column = await prisma.column.findUnique({
       where: { id: columnId },
-      include: { board: true },
+      include: {
+        board: {
+          include: {
+            creator: true,
+            members: true,
+          },
+        },
+      },
     });
 
     if (!column) {
@@ -42,15 +57,10 @@ export async function POST(
     }
 
     // Vérifier que l'utilisateur a accès au tableau
-    const hasAccess = await prisma.board.findFirst({
-      where: {
-        id: column.boardId,
-        OR: [
-          { creatorId: session.user.id },
-          { members: { some: { id: session.user.id } } },
-        ],
-      },
-    });
+    const board = column.board;
+    const hasAccess =
+      board.creatorId === session.user.id ||
+      board.members.some((member) => member.id === session.user.id);
 
     if (!hasAccess) {
       return NextResponse.json(
@@ -68,6 +78,44 @@ export async function POST(
         userId: session.user.id,
       },
     });
+
+    // Envoyer des notifications
+    const usersToNotify = [
+      ...board.members.filter((m) => m.id !== session.user.id),
+    ];
+
+    if (board.creator.id !== session.user.id) {
+      usersToNotify.push(board.creator);
+    }
+
+    for (const user of usersToNotify) {
+      const subscriptions = await prisma.pushSubscription.findMany({
+        where: { userId: user.id },
+      });
+
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              },
+            },
+            JSON.stringify({
+              title: "Nouvelle tâche ajoutée",
+              body: `${
+                session.user.username || "Un utilisateur"
+              } a ajouté "${title}" au tableau "${board.content}"`,
+              url: `/board/${board.id}`,
+            })
+          );
+        } catch (error) {
+          console.error("Erreur d'envoi de notification:", error);
+        }
+      }
+    }
 
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
