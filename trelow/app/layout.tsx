@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "Trelow",
   description: "Une application de gestion de tâches",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

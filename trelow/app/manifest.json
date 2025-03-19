@@ -1,0 +1,25 @@
+{
+  "name": "Trelow",
+  "short_name": "Trelow",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#f46b45",
+  "background_color": "#000000",
+  "description": "Une todolist simple et efficace",
+  "categories": ["productivity"],
+  "icons": [
+    {
+      "src": "todolist.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "form_factor": "wide"
+    }
+  ]
+}
