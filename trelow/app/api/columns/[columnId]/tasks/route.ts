@@ -25,7 +25,7 @@ export async function POST(
       return NextResponse.json({ message: "Non authentifié" }, { status: 401 });
     }
 
-    const { columnId } = params;
+    const { columnId } = await params;
     const body = await request.json();
     const { title, content, priority } = body;
 

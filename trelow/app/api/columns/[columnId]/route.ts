@@ -20,7 +20,7 @@ export async function PUT(
       );
     }
 
-    const { columnId } = params;
+    const { columnId } = await params;
     const body = await request.json();
     const { title } = body;
 
@@ -90,7 +90,7 @@ export async function DELETE(
       );
     }
 
-    const { columnId } = params;
+    const { columnId } = await params;
 
     // Get the column to check board access
     const column = await prisma.column.findUnique({

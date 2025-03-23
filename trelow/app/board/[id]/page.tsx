@@ -90,7 +90,58 @@ export default function BoardPage() {
     }
   };
 
-  // Optimistic updates
+  // Fonction utilitaire pour mettre à jour le cache hors ligne
+  const updateOfflineCache = async (
+    type: "board" | "column" | "task",
+    action: "add" | "update" | "delete",
+    data: any,
+    columnId?: string
+  ) => {
+    try {
+      // 1. Mettre à jour localStorage pour un accès rapide
+      if (type === "board" && board) {
+        // Mettre à jour les informations du tableau
+        localStorage.setItem(`cached-board-${boardId}`, JSON.stringify(board));
+      } else if (type === "column") {
+        // Mettre à jour les colonnes
+        if (board) {
+          const columnsData = board.columns;
+          localStorage.setItem(
+            `cached-board-${boardId}-columns`,
+            JSON.stringify(columnsData)
+          );
+        }
+      } else if (type === "task" && columnId) {
+        // Trouver les tâches de la colonne spécifique
+        const column = board?.columns.find((col) => col.id === columnId);
+        if (column) {
+          localStorage.setItem(
+            `cached-column-${columnId}-tasks`,
+            JSON.stringify(column.tasks)
+          );
+        }
+      }
+
+      // 2. Mettre à jour le cache via le service worker
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "UPDATE_CACHE",
+          boardId,
+          entityType: type,
+          action: action,
+          data: data,
+          columnId: columnId,
+        });
+      }
+    } catch (error) {
+      console.error(
+        "Erreur lors de la mise à jour du cache hors ligne:",
+        error
+      );
+    }
+  };
+
+  // Mettre à jour handleAddColumn pour sauvegarder hors ligne
   const handleAddColumn = async () => {
     if (!newColumnTitle.trim() || !board) return;
 
@@ -103,11 +154,12 @@ export default function BoardPage() {
     };
 
     // Update UI optimistically
-    setBoard({
+    const updatedBoard = {
       ...board,
       columns: [...board.columns, newColumn],
-    });
+    };
 
+    setBoard(updatedBoard);
     setNewColumnTitle("");
     setIsAddingColumn(false);
 
@@ -123,15 +175,17 @@ export default function BoardPage() {
         const createdColumn = await response.json();
 
         // Replace temp column with real one
-        setBoard((prevBoard) => {
-          if (!prevBoard) return null;
-          return {
-            ...prevBoard,
-            columns: prevBoard.columns.map((col) =>
-              col.id === tempId ? { ...createdColumn, tasks: [] } : col
-            ),
-          };
-        });
+        const finalBoard = {
+          ...board,
+          columns: board.columns.map((col) =>
+            col.id === tempId ? { ...createdColumn, tasks: [] } : col
+          ),
+        };
+
+        setBoard(finalBoard);
+
+        // Mettre à jour le cache hors ligne
+        updateOfflineCache("column", "add", createdColumn);
       } else {
         // If API call failed, revert to original state
         fetchBoard();
@@ -142,19 +196,28 @@ export default function BoardPage() {
     }
   };
 
+  // Mettre à jour handleUpdateColumnTitle
   const handleUpdateColumnTitle = async (
     columnId: string,
     newTitle: string
   ) => {
     if (!board) return;
 
+    // Backup de la colonne avant modification
+    const originalColumn = board.columns.find((col) => col.id === columnId);
+    if (!originalColumn) return;
+
     // Update UI optimistically
-    setBoard({
+    const updatedColumns = board.columns.map((col) =>
+      col.id === columnId ? { ...col, title: newTitle } : col
+    );
+
+    const updatedBoard = {
       ...board,
-      columns: board.columns.map((col) =>
-        col.id === columnId ? { ...col, title: newTitle } : col
-      ),
-    });
+      columns: updatedColumns,
+    };
+
+    setBoard(updatedBoard);
 
     try {
       const response = await fetch(`/api/columns/${columnId}`, {
@@ -163,7 +226,11 @@ export default function BoardPage() {
         body: JSON.stringify({ title: newTitle }),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        // Mettre à jour le cache hors ligne
+        const updatedColumn = { ...originalColumn, title: newTitle };
+        updateOfflineCache("column", "update", updatedColumn);
+      } else {
         fetchBoard(); // Revert on error
       }
     } catch (error) {
@@ -172,24 +239,35 @@ export default function BoardPage() {
     }
   };
 
+  // Mettre à jour handleDeleteColumn
   const handleDeleteColumn = async (columnId: string) => {
     if (!board) return;
 
     // Save column for possible restoration
     const deletedColumn = board.columns.find((col) => col.id === columnId);
+    if (!deletedColumn) return;
 
     // Update UI optimistically
-    setBoard({
+    const updatedColumns = board.columns.filter((col) => col.id !== columnId);
+    const updatedBoard = {
       ...board,
-      columns: board.columns.filter((col) => col.id !== columnId),
-    });
+      columns: updatedColumns,
+    };
+
+    setBoard(updatedBoard);
 
     try {
       const response = await fetch(`/api/columns/${columnId}`, {
         method: "DELETE",
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        // Mettre à jour le cache hors ligne
+        updateOfflineCache("column", "delete", deletedColumn);
+
+        // Supprimer aussi les tâches de cette colonne du cache
+        localStorage.removeItem(`cached-column-${columnId}-tasks`);
+      } else {
         fetchBoard(); // Revert on error
       }
     } catch (error) {
@@ -198,6 +276,7 @@ export default function BoardPage() {
     }
   };
 
+  // Mettre à jour handleAddTask
   const handleAddTask = async (
     columnId: string,
     taskData: { title: string; priority: "low" | "medium" | "high" }
@@ -216,18 +295,22 @@ export default function BoardPage() {
     };
 
     // Update UI optimistically
-    setBoard({
-      ...board,
-      columns: board.columns.map((col) => {
-        if (col.id === columnId) {
-          return {
-            ...col,
-            tasks: [tempTask, ...col.tasks],
-          };
-        }
-        return col;
-      }),
+    const updatedColumns = board.columns.map((col) => {
+      if (col.id === columnId) {
+        return {
+          ...col,
+          tasks: [tempTask, ...col.tasks],
+        };
+      }
+      return col;
     });
+
+    const updatedBoard = {
+      ...board,
+      columns: updatedColumns,
+    };
+
+    setBoard(updatedBoard);
 
     try {
       const response = await fetch(`/api/columns/${columnId}/tasks`, {
@@ -240,23 +323,27 @@ export default function BoardPage() {
         const realTask = await response.json();
 
         // Replace temp task with real one
-        setBoard((prevBoard) => {
-          if (!prevBoard) return null;
-          return {
-            ...prevBoard,
-            columns: prevBoard.columns.map((col) => {
-              if (col.id === columnId) {
-                return {
-                  ...col,
-                  tasks: col.tasks.map((task) =>
-                    task.id === tempTask.id ? realTask : task
-                  ),
-                };
-              }
-              return col;
-            }),
-          };
+        const finalColumns = board.columns.map((col) => {
+          if (col.id === columnId) {
+            return {
+              ...col,
+              tasks: col.tasks.map((task) =>
+                task.id === tempTask.id ? realTask : task
+              ),
+            };
+          }
+          return col;
         });
+
+        const finalBoard = {
+          ...board,
+          columns: finalColumns,
+        };
+
+        setBoard(finalBoard);
+
+        // Mettre à jour le cache hors ligne
+        updateOfflineCache("task", "add", realTask, columnId);
       } else {
         fetchBoard(); // Revert on error
       }
@@ -266,6 +353,7 @@ export default function BoardPage() {
     }
   };
 
+  // Mettre à jour handleUpdateTask
   const handleUpdateTask = async (
     taskId: string,
     updatedData: {
@@ -291,28 +379,32 @@ export default function BoardPage() {
     if (!taskColumn || !taskToUpdate) return;
 
     // Update UI optimistically
-    setBoard({
-      ...board,
-      columns: board.columns.map((col) => {
-        if (col.id === taskColumn?.id) {
-          return {
-            ...col,
-            tasks: col.tasks.map((task) => {
-              if (task.id === taskId) {
-                return {
-                  ...task,
-                  title: updatedData.title,
-                  content: updatedData.content || task.content,
-                  priority: updatedData.priority,
-                };
-              }
-              return task;
-            }),
-          };
-        }
-        return col;
-      }),
+    const updatedColumns = board.columns.map((col) => {
+      if (col.id === taskColumn?.id) {
+        return {
+          ...col,
+          tasks: col.tasks.map((task) => {
+            if (task.id === taskId) {
+              return {
+                ...task,
+                title: updatedData.title,
+                content: updatedData.content || task.content,
+                priority: updatedData.priority,
+              };
+            }
+            return task;
+          }),
+        };
+      }
+      return col;
     });
+
+    const updatedBoard = {
+      ...board,
+      columns: updatedColumns,
+    };
+
+    setBoard(updatedBoard);
 
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -321,7 +413,18 @@ export default function BoardPage() {
         body: JSON.stringify(updatedData),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        // Récupérer la tâche mise à jour
+        const updatedTask = {
+          ...taskToUpdate,
+          title: updatedData.title,
+          content: updatedData.content || taskToUpdate.content,
+          priority: updatedData.priority,
+        };
+
+        // Mettre à jour le cache hors ligne
+        updateOfflineCache("task", "update", updatedTask, taskColumn.id);
+      } else {
         fetchBoard(); // Revert on error
       }
     } catch (error) {
@@ -330,6 +433,7 @@ export default function BoardPage() {
     }
   };
 
+  // Mettre à jour handleDeleteTask
   const handleDeleteTask = async (taskId: string) => {
     if (!board) return;
 
@@ -348,25 +452,32 @@ export default function BoardPage() {
     if (!columnWithTask || !taskToDelete) return;
 
     // Update UI optimistically
-    setBoard({
-      ...board,
-      columns: board.columns.map((col) => {
-        if (col.id === columnWithTask?.id) {
-          return {
-            ...col,
-            tasks: col.tasks.filter((task) => task.id !== taskId),
-          };
-        }
-        return col;
-      }),
+    const updatedColumns = board.columns.map((col) => {
+      if (col.id === columnWithTask?.id) {
+        return {
+          ...col,
+          tasks: col.tasks.filter((task) => task.id !== taskId),
+        };
+      }
+      return col;
     });
+
+    const updatedBoard = {
+      ...board,
+      columns: updatedColumns,
+    };
+
+    setBoard(updatedBoard);
 
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: "DELETE",
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        // Mettre à jour le cache hors ligne
+        updateOfflineCache("task", "delete", taskToDelete, columnWithTask.id);
+      } else {
         fetchBoard(); // Revert on error
       }
     } catch (error) {
@@ -375,6 +486,7 @@ export default function BoardPage() {
     }
   };
 
+  // Add this function before handleDragEnd
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const activeTaskId = active.id.toString();
@@ -391,6 +503,7 @@ export default function BoardPage() {
     if (foundTask) setActiveTask(foundTask);
   };
 
+  // Mettre à jour handleDragEnd
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
@@ -413,28 +526,40 @@ export default function BoardPage() {
     });
 
     if (taskToMove && sourceColumnId !== targetColumnId) {
+      // Backup des colonnes source et cible avant modification
+      const sourceColumn = board.columns.find(
+        (col) => col.id === sourceColumnId
+      );
+      const targetColumn = board.columns.find(
+        (col) => col.id === targetColumnId
+      );
+
+      if (!sourceColumn || !targetColumn) return;
+
       // Update UI optimistically
-      setBoard({
-        ...board,
-        columns: board.columns.map((col) => {
-          if (col.id === sourceColumnId) {
-            return {
-              ...col,
-              tasks: col.tasks.filter((t) => t.id !== taskId),
-            };
-          }
-          if (col.id === targetColumnId) {
-            return {
-              ...col,
-              tasks: [
-                { ...taskToMove!, columnId: targetColumnId },
-                ...col.tasks,
-              ],
-            };
-          }
-          return col;
-        }),
+      const updatedColumns = board.columns.map((col) => {
+        if (col.id === sourceColumnId) {
+          return {
+            ...col,
+            tasks: col.tasks.filter((t) => t.id !== taskId),
+          };
+        }
+        if (col.id === targetColumnId) {
+          const movedTask = { ...taskToMove!, columnId: targetColumnId };
+          return {
+            ...col,
+            tasks: [movedTask, ...col.tasks],
+          };
+        }
+        return col;
       });
+
+      const updatedBoard = {
+        ...board,
+        columns: updatedColumns,
+      };
+
+      setBoard(updatedBoard);
 
       try {
         const response = await fetch(`/api/tasks/${taskId}/move`, {
@@ -443,7 +568,27 @@ export default function BoardPage() {
           body: JSON.stringify({ destinationColumnId: targetColumnId }),
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+          // Mettre à jour le cache hors ligne pour les deux colonnes
+          const updatedSourceColumn = updatedColumns.find(
+            (col) => col.id === sourceColumnId
+          );
+          const updatedTargetColumn = updatedColumns.find(
+            (col) => col.id === targetColumnId
+          );
+
+          if (updatedSourceColumn) {
+            updateOfflineCache("column", "update", updatedSourceColumn);
+          }
+
+          if (updatedTargetColumn) {
+            updateOfflineCache("column", "update", updatedTargetColumn);
+          }
+
+          // Mettre à jour la tâche elle-même
+          const movedTask = { ...taskToMove, columnId: targetColumnId };
+          updateOfflineCache("task", "update", movedTask, targetColumnId);
+        } else {
           fetchBoard(); // Revert on error
         }
       } catch (error) {
@@ -453,6 +598,7 @@ export default function BoardPage() {
     }
   };
 
+  // Fix loading state rendering
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex justify-center items-center">
@@ -472,7 +618,15 @@ export default function BoardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">{board.content}</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-gray-800">{board.content}</h1>
+          {navigator.onLine === false && (
+            <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md flex items-center">
+              <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+              Mode hors ligne
+            </div>
+          )}
+        </div>
         <Button
           variant="outline"
           className="text-gray-600"

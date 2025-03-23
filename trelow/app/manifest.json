@@ -21,5 +21,6 @@
       "sizes": "512x512",
       "form_factor": "wide"
     }
-  ]
+  ],
+  "offline_enabled": true
 }
