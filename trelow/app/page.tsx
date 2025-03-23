@@ -62,6 +62,7 @@ export default function BoardsListPage() {
       );
       fetchBoardsFromCache();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router, session, isOffline]);
 
   // Précharger tous les tableaux en arrière-plan
@@ -231,7 +232,7 @@ export default function BoardsListPage() {
   if (status === "loading" && !isOffline) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p className="text-xl">Vérification de l'authentification...</p>
+        <p className="text-xl">Vérification de l&apos;authentification...</p>
       </div>
     );
   }

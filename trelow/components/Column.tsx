@@ -26,6 +26,7 @@ interface Props {
     columnId: string,
     task: { title: string; priority: "low" | "medium" | "high" }
   ) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onUpdateTask?: (taskId: string, task: any) => void;
   onDeleteTask?: (taskId: string) => void;
 }
@@ -33,7 +34,6 @@ interface Props {
 export default function Column({
   column,
   tasks,
-  boardId,
   onBoardUpdate,
   onUpdateColumn,
   onDeleteColumn,

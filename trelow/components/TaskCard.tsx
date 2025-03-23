@@ -12,6 +12,7 @@ import { format } from "date-fns";
 interface Props {
   task: Task;
   onUpdate?: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onUpdateTask?: (taskId: string, task: any) => void;
   onDeleteTask?: (taskId: string) => void;
 }

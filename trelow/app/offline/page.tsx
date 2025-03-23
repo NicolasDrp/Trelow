@@ -113,7 +113,7 @@ export default function OfflinePage() {
               </h3>
               <p className="text-sm text-yellow-700 mt-1">
                 You can still view your previously loaded boards, but you cannot
-                make changes until you're back online.
+                make changes until you&apos;re back online.
               </p>
             </div>
           </div>
@@ -175,8 +175,8 @@ export default function OfflinePage() {
             <div className="mt-2 max-w-xl text-sm text-gray-500">
               <p>
                 In offline mode, you can view previously loaded boards and
-                tasks, but you cannot make changes. Once you're back online,
-                your app will automatically reconnect.
+                tasks, but you cannot make changes. Once you&apos;re back
+                online, your app will automatically reconnect.
               </p>
             </div>
           </div>

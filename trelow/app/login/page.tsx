@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +50,7 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              Nom d'utilisateur:
+              Nom d&apos;utilisateur:
             </label>
             <input
               type="text"

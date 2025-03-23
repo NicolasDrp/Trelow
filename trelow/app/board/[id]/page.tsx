@@ -70,6 +70,7 @@ export default function BoardPage() {
     if (status === "authenticated" && boardId) {
       fetchBoard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, boardId, router]);
 
   const fetchBoard = async () => {
@@ -94,6 +95,7 @@ export default function BoardPage() {
   const updateOfflineCache = async (
     type: "board" | "column" | "task",
     action: "add" | "update" | "delete",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any,
     columnId?: string
   ) => {

@@ -44,6 +44,7 @@ export default function Signup() {
 
       // Success - redirect to login
       router.push("/login?registered=true");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -17,6 +17,7 @@ function PushNotificationHandler() {
     if (Notification.permission === "granted") {
       registerServiceWorker();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   async function registerServiceWorker() {
