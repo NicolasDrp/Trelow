@@ -79,6 +79,7 @@ export default function Column({
         priority: newTaskPriority,
       });
 
+      // Réinitialiser les champs de saisie et fermer le formulaire
       setNewTaskContent("");
       setNewTaskPriority("medium");
       setIsAddingTask(false);
@@ -283,7 +284,7 @@ export default function Column({
                   ref={inputRef}
                   value={newTaskContent}
                   onChange={(e) => setNewTaskContent(e.target.value)}
-                  placeholder="Enter task content..."
+                  placeholder="Contenu de la tâche..."
                   className="text-sm"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleAddTask();
@@ -303,7 +304,7 @@ export default function Column({
                       )}
                       onClick={() => setNewTaskPriority("low")}
                     >
-                      Low
+                      Bas
                     </Button>
                     <Button
                       size="sm"
@@ -316,7 +317,7 @@ export default function Column({
                       )}
                       onClick={() => setNewTaskPriority("medium")}
                     >
-                      Medium
+                      Moyen
                     </Button>
                     <Button
                       size="sm"
@@ -329,7 +330,7 @@ export default function Column({
                       )}
                       onClick={() => setNewTaskPriority("high")}
                     >
-                      High
+                      Haut
                     </Button>
                   </div>
                 </div>
@@ -339,14 +340,14 @@ export default function Column({
                     variant="outline"
                     onClick={() => setIsAddingTask(false)}
                   >
-                    Cancel
+                    Annuler
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleAddTask}
                     disabled={!newTaskContent.trim()}
                   >
-                    Add
+                    Ajouter
                   </Button>
                 </div>
               </div>
@@ -365,7 +366,7 @@ export default function Column({
             onClick={() => setIsAddingTask(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
-            Add task
+            Ajouter tâche
           </Button>
         </div>
       )}

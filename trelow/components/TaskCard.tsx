@@ -48,6 +48,11 @@ export default function TaskCard({
     }
   }, [isEditing]);
 
+  // Ajouter un effet pour vérifier les props reçues
+  useEffect(() => {
+    console.log("TaskCard rendu avec task:", task.id, task.content);
+  }, [task]);
+
   const handleSave = async () => {
     // Extract title and content from the merged content
     const title = content.split("\n")[0].trim();
@@ -111,6 +116,12 @@ export default function TaskCard({
     high: "bg-red-100 text-red-800 hover:bg-red-200",
   };
 
+  const priorityLabels = {
+    low: "Basse",
+    medium: "Moyenne",
+    high: "Haute",
+  };
+
   const handlePriorityChange = (newPriority: "low" | "medium" | "high") => {
     setPriority(newPriority);
   };
@@ -167,7 +178,7 @@ export default function TaskCard({
                           : "bg-gray-100 hover:bg-gray-200"
                       )}
                     >
-                      Low
+                      Basse
                     </button>
                     <button
                       onClick={() => handlePriorityChange("medium")}
@@ -178,7 +189,7 @@ export default function TaskCard({
                           : "bg-gray-100 hover:bg-gray-200"
                       )}
                     >
-                      Medium
+                      Moyenne
                     </button>
                     <button
                       onClick={() => handlePriorityChange("high")}
@@ -189,7 +200,7 @@ export default function TaskCard({
                           : "bg-gray-100 hover:bg-gray-200"
                       )}
                     >
-                      High
+                      Haute
                     </button>
                   </div>
                   <button
@@ -209,7 +220,7 @@ export default function TaskCard({
                       variant="outline"
                       className={cn("text-xs", priorityColors[task.priority])}
                     >
-                      {task.priority}
+                      {priorityLabels[task.priority]}
                     </Badge>
                   )}
                   <span className="text-xs text-gray-400">

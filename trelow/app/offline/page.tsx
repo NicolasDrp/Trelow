@@ -78,10 +78,11 @@ export default function OfflinePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">
-            Loading offline content...
+            Chargement du contenu hors ligne...
           </h2>
           <p className="text-gray-500">
-            Please wait while we check for available data.
+            Veuillez patienter pendant que nous vérifions les données
+            disponibles.
           </p>
         </div>
       </div>
@@ -109,18 +110,19 @@ export default function OfflinePage() {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                You are offline
+                Vous êtes hors ligne
               </h3>
               <p className="text-sm text-yellow-700 mt-1">
-                You can still view your previously loaded boards, but you cannot
-                make changes until you&apos;re back online.
+                Vous pouvez toujours consulter vos tableaux précédemment
+                chargés, mais vous ne pourrez pas effectuer de modifications
+                avant d&apos;être de nouveau en ligne.
               </p>
             </div>
           </div>
         </div>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          Available Boards
+          Tableaux disponibles
         </h1>
 
         {cachedBoards.length > 0 ? (
@@ -133,8 +135,7 @@ export default function OfflinePage() {
                       {board.content}
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      Created on{" "}
-                      {new Date(board.createdAt).toLocaleDateString()}
+                      Créé le {new Date(board.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -158,10 +159,11 @@ export default function OfflinePage() {
                 />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No boards available offline
+                Aucun tableau disponible hors ligne
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                You need to connect to the internet to view your boards.
+                Vous devez vous connecter à Internet pour consulter vos
+                tableaux.
               </p>
             </div>
           </div>
@@ -170,13 +172,14 @@ export default function OfflinePage() {
         <div className="mt-8 bg-white shadow overflow-hidden rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Offline Mode Information
+              Informations sur le mode hors ligne
             </h3>
             <div className="mt-2 max-w-xl text-sm text-gray-500">
               <p>
-                In offline mode, you can view previously loaded boards and
-                tasks, but you cannot make changes. Once you&apos;re back
-                online, your app will automatically reconnect.
+                En mode hors ligne, vous pouvez consulter les tableaux et tâches
+                précédemment chargés, mais vous ne pouvez pas effectuer de
+                modifications. Une fois que vous serez de nouveau en ligne,
+                votre application se reconnectera automatiquement.
               </p>
             </div>
           </div>

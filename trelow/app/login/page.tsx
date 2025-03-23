@@ -50,7 +50,7 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              Nom d&apos;utilisateur:
+              Nom d&apos;utilisateur :
             </label>
             <input
               type="text"
@@ -63,7 +63,7 @@ export default function Login() {
 
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              Mot de passe:
+              Mot de passe :
             </label>
             <input
               type="password"
@@ -81,6 +81,15 @@ export default function Login() {
           >
             {loading ? "Connexion en cours..." : "Se connecter"}
           </button>
+
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Vous n&apos;avez pas encore de compte ?{" "}
+              <a href="/signup" className="text-blue-500 hover:text-blue-700">
+                Inscrivez-vous ici
+              </a>
+            </p>
+          </div>
         </form>
       </div>
     </div>

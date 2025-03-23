@@ -285,6 +285,8 @@ export default function BoardPage() {
   ) => {
     if (!board) return;
 
+    console.log("Ajout de tâche dans la colonne:", columnId, taskData);
+
     // Create temporary task
     const tempTask: Task = {
       id: `temp_${Date.now()}`,
@@ -299,6 +301,7 @@ export default function BoardPage() {
     // Update UI optimistically
     const updatedColumns = board.columns.map((col) => {
       if (col.id === columnId) {
+        console.log("Ajout de tâche temporaire dans la colonne:", col.title);
         return {
           ...col,
           tasks: [tempTask, ...col.tasks],
@@ -312,9 +315,11 @@ export default function BoardPage() {
       columns: updatedColumns,
     };
 
+    console.log("Mise à jour du tableau avec tâche temporaire");
     setBoard(updatedBoard);
 
     try {
+      console.log("Envoi API pour création de la tâche");
       const response = await fetch(`/api/columns/${columnId}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -323,9 +328,11 @@ export default function BoardPage() {
 
       if (response.ok) {
         const realTask = await response.json();
+        console.log("Tâche créée avec succès, ID:", realTask.id);
 
-        // Replace temp task with real one
-        const finalColumns = board.columns.map((col) => {
+        // Replace temp task with real one - IMPORTANT: Utiliser le board actuel, pas celui d'origine
+        const currentBoard = { ...updatedBoard };
+        const finalColumns = currentBoard.columns.map((col) => {
           if (col.id === columnId) {
             return {
               ...col,
@@ -338,20 +345,22 @@ export default function BoardPage() {
         });
 
         const finalBoard = {
-          ...board,
+          ...currentBoard,
           columns: finalColumns,
         };
 
+        console.log("Mise à jour finale du tableau");
         setBoard(finalBoard);
 
         // Mettre à jour le cache hors ligne
         updateOfflineCache("task", "add", realTask, columnId);
       } else {
-        fetchBoard(); // Revert on error
+        console.error("Erreur API:", await response.text());
+        // Pas de fetchBoard() ici pour conserver la tâche temporaire
       }
     } catch (error) {
       console.error("Error adding task:", error);
-      fetchBoard();
+      // Pas de fetchBoard() ici pour éviter de perdre la tâche temporaire
     }
   };
 
@@ -604,7 +613,7 @@ export default function BoardPage() {
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex justify-center items-center">
-        <p className="text-xl">Loading your board...</p>
+        <p className="text-xl">Chargement de votre tableau...</p>
       </div>
     );
   }
@@ -612,7 +621,7 @@ export default function BoardPage() {
   if (!board) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex justify-center items-center">
-        <p className="text-xl">Board not found</p>
+        <p className="text-xl">Tableau non trouvé</p>
       </div>
     );
   }
@@ -634,7 +643,7 @@ export default function BoardPage() {
           className="text-gray-600"
           onClick={() => router.push("/")}
         >
-          Back to Boards
+          Retour aux tableaux
         </Button>
       </div>
 
@@ -682,7 +691,7 @@ export default function BoardPage() {
                   <Input
                     value={newColumnTitle}
                     onChange={(e) => setNewColumnTitle(e.target.value)}
-                    placeholder="Enter column title..."
+                    placeholder="Entrez le titre de la colonne..."
                     className="text-sm"
                     autoFocus
                     onKeyDown={(e) => {
@@ -697,7 +706,7 @@ export default function BoardPage() {
                       onClick={() => setIsAddingColumn(false)}
                     >
                       <X className="h-4 w-4 mr-1" />
-                      Cancel
+                      Annuler
                     </Button>
                     <Button
                       size="sm"
@@ -705,7 +714,7 @@ export default function BoardPage() {
                       disabled={!newColumnTitle.trim()}
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Add
+                      Ajouter
                     </Button>
                   </div>
                 </div>
@@ -716,7 +725,7 @@ export default function BoardPage() {
                   onClick={() => setIsAddingColumn(true)}
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Column
+                  Ajouter une colonne
                 </Button>
               )}
             </div>
