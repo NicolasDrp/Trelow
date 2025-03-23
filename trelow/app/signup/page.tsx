@@ -66,7 +66,7 @@ export default function Signup() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              Nom d'utilisateur :
+              Nom d&apos;utilisateur :
             </label>
             <input
               type="text"
