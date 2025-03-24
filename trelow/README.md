@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Trelow - Application Kanban
 
-## Getting Started
+Trelow est une application Kanban de gestion de tâches avec fonctionnalités hors ligne et notifications push.
 
-First, run the development server:
+## Prérequis
+
+- Node.js 18+
+- PostgreSQL (local ou distant)
+- npm ou yarn
+
+## Installation
+
+Clonez le dépôt et installez les dépendances :
+
+```bash
+git clone https://github.com/votre-utilisateur/trelow.git
+cd trelow
+npm install
+# ou
+yarn install
+```
+
+## Configuration des variables d'environnement
+
+1. Copiez le fichier `.env.example` en `.env` :
+
+```bash
+cp .env.example .env
+```
+
+2. Configurez les variables dans le fichier `.env` :
+
+```.env
+# URL de connexion à la base de données PostgreSQL
+DATABASE_URL="postgresql://username:password@localhost:5432/trelow"
+
+# Clé secrète pour NextAuth (générez-la avec `openssl rand -base64 32`)
+NEXTAUTH_SECRET="votre-clé-secrète"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Clés VAPID pour les notifications push
+# Générez-les avec le code suivant dans un script Node.js :
+# const webpush = require('web-push');
+# const vapidKeys = webpush.generateVAPIDKeys();
+# console.log(vapidKeys);
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="votre-clé-publique"
+VAPID_PRIVATE_KEY="votre-clé-privée"
+```
+
+## Configuration de la base de données avec Prisma
+
+1. Assurez-vous que PostgreSQL est en cours d'exécution et que l'URL dans `.env` est correcte
+
+2. Générez le client Prisma :
+
+```bash
+npx prisma generate
+```
+
+3. Créez les tables dans la base de données :
+
+```bash
+npx prisma migrate dev --name init
+```
+
+## Démarrage de l'application
+
+### Mode développement
 
 ```bash
 npm run dev
-# or
+# ou
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Construction pour la production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+# ou
+yarn build
+```
 
-## Learn More
+### Démarrage en mode production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run start
+# ou
+yarn start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Fonctionnalités
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Tableaux Kanban avec colonnes personnalisables
+- Glisser-déposer des tâches entre colonnes
+- Définition de priorités (faible, moyenne, haute)
+- Mode hors ligne avec synchronisation automatique
+- Notifications push pour les mises à jour
 
-## Deploy on Vercel
+## Technologies utilisées
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 15
+- React 19
+- TypeScript
+- Prisma avec PostgreSQL
+- TailwindCSS
+- Service Workers pour le mode hors ligne
+- Web Push API pour les notifications
